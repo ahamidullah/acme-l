@@ -1,6 +1,6 @@
 Add lisp style parenthesis highlighting to acme, part of plan9port.
 Build:
-	Copy the files into your plan9port directory.
+	Copy acme-l files into your plan9port directory, overwriting existing files.
 	Rebuild the entire plan9port project.
 Usage:
 	Execute "Lisp ON" to use parenthesis highlighting for that window.
