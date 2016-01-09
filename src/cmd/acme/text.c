@@ -1217,11 +1217,13 @@ textsetselect(Text *t, uint q0, uint q1)
 	if (t->w && t->w->lisp && p0==p1 && q1>1 && textreadc(t, --q1) == ')') {
 		q0=q1;
 		if (textclickmatch(t, ')', '(', -1, &q0) && (++q0 != q1)) {
-			l0 = q0-t->org;
-			l1 = q1-t->org;
-			frdrawsel(&t->fr, frptofchar(&t->fr, l0), l0, l1, -1);
-			t->fr.l0 = l0;
-			t->fr.l1 = l1;
+			int lh0 = q0 - t->org;
+			int lh1 = q1 - t->org;
+			if (lh0 < 0)
+				lh0 = 0;
+			frdrawsel(&t->fr, frptofchar(&t->fr, lh0), lh0, lh1, -1);
+			t->fr.l0 = lh0;
+			t->fr.l1 = lh1;
 		}		
 	}
 
@@ -1250,8 +1252,8 @@ textsetselect(Text *t, uint q0, uint q1)
 		/* trim last part of selection */
 		frdrawsel(&t->fr, frptofchar(&t->fr, p1), p1, t->fr.p1, 0);
 	}
-
-    Return:
+	
+	Return:
 	t->fr.p0 = p0;
 	t->fr.p1 = p1;
 }
@@ -1486,6 +1488,7 @@ textclickmatch(Text *t, int cl, int cr, int dir, uint *q)
 		}else if(c == cl)
 			nest++;
 	}
+	
 	return cl=='\n' && nest==1;
 }
 
