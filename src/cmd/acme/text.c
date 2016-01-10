@@ -1176,7 +1176,7 @@ selrestore(Frame *f, Point pt0, uint p0, uint p1)
 void
 textsetselect(Text *t, uint q0, uint q1)
 {
-	int p0, p1, l0, l1, ticked;
+	int p0, p1, ticked;
 	
 	/* t->fr.p0 and t->fr.p1 are always right; t->q0 and t->q1 may be off */
 	t->q0 = q0;
@@ -1221,6 +1221,8 @@ textsetselect(Text *t, uint q0, uint q1)
 			int lh1 = q1 - t->org;
 			if (lh0 < 0)
 				lh0 = 0;
+			if (lh1 < 0)
+				lh1 = 0;
 			frdrawsel(&t->fr, frptofchar(&t->fr, lh0), lh0, lh1, -1);
 			t->fr.l0 = lh0;
 			t->fr.l1 = lh1;
