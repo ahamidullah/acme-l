@@ -570,6 +570,32 @@ textfilewidth(Text *t, uint q0, int oneelement)
 	return q0-q;
 }
 
+int
+textfswidth(Text *t)
+{
+	uint q;
+	Rune r;
+	int skipping;
+
+	q = t->q0;
+	skipping = TRUE;
+
+	if(t->q0 >=  t->file->b.nc)
+		return 0;
+
+	r = textreadc(t, q-1);
+ //print("r %d\n", r);
+	while(r != '\n'){
+ //print("r loop %d\n", r);
+		if(q >=  t->file->b.nc)
+			break;
+		++q;
+		r = textreadc(t, q-1);
+	}
+//print("fsw: t->q0 %d q %d tfnc %d\n", t->q0, q, t->file->b.nc);
+	return q-t->q0;
+}
+
 Rune*
 textcomplete(Text *t)
 {
@@ -657,7 +683,7 @@ void
 texttype(Text *t, Rune r)
 {
 	uint q0, q1;
-	int nnb, nb, n, i;
+	int nnb, nb, n, i, col, nlcount;
 	int nr;
 	Rune *rp;
 	Text *u;
@@ -671,11 +697,13 @@ texttype(Text *t, Rune r)
 	rp = &r;
 	switch(r){
 	case Kleft:
+	case 0x02:	/* ^B: left one */
 		typecommit(t);
 		if(t->q0 > 0)
 			textshow(t, t->q0-1, t->q0-1, TRUE);
 		return;
 	case Kright:
+	case 0x06:     /* ^F: right one */
 		typecommit(t);
 		if(t->q1 < t->file->b.nc)
 			textshow(t, t->q1+1, t->q1+1, TRUE);
@@ -742,6 +770,18 @@ texttype(Text *t, Rune r)
 			nnb = textbswidth(t, 0x15);
 		textshow(t, t->q0-nnb, t->q0-nnb, TRUE);
 		return;
+	case 0x04:	/* ^D: delete next char *
+		/* only delete if there is something to delete */
+		if(t->q1 < t->file->b.nc){
+			/* I'm lazy. Move right, then backspace. */
+			typecommit(t);
+			textshow(t, t->q1+1, t->q1+1, TRUE);
+			/* well, this is shit code but ...  */
+			r = 0x08;
+		} 
+		else
+			return;
+		break;
 	case 0x05:	/* ^E: end of line */
 		typecommit(t);
 		q0 = t->q0;
@@ -749,6 +789,91 @@ texttype(Text *t, Rune r)
 			q0++;
 		textshow(t, q0, q0, TRUE);
 		return;
+	case 0x0b:	/* ^K: delete to end of line*/
+		/* only delete if there is something to delete */
+		if(t->q1 < t->file->b.nc){
+			typecommit(t);
+			textshow(t, t->q1+1, t->q1+1, TRUE);
+		} 
+		else
+			return;
+		break;
+	case 0x0c:	/* ^L: redraw*/
+		textresize(t, t->all, TRUE);
+		return;
+		break;
+	case 0x0d: /* ^M: CR */
+		break;
+	case 0x0e: /* ^N : next line */
+		/* fairly simple, not. start at your column, and go 
+		  * right, until you get to that column again
+		  */
+		/* find our column by, in essence, doing a ^A */
+		typecommit(t);
+		/* go to where ^U would erase, if not already at BOL */
+		nnb = 0;
+		if(t->q0>0 && textreadc(t, t->q0-1)!='\n')
+			nnb = textbswidth(t, 0x15);
+		/* nnb is our column */
+		/* now move forward, one at a time, until we 
+		  * (a) pass a newline and
+		  * (b) hit EOF OR get back to nnb 
+		  */
+		q0 = t->q0;
+		while(q0<t->file->b.nc && textreadc(t, q0)!='\n')
+			q0++;
+		while(++q0<t->file->b.nc && textreadc(t, q0)!= '\n' && nnb > 0)
+			--nnb;
+		if (q0 > t->file->b.nc)
+			q0 = t->file->b.nc;
+		textshow(t,q0, q0, TRUE);	
+		return;
+		break;
+	case 0x10: /* ^P : prev line */
+		/* fairly simple, not. start at your column, and go 
+		  * left, until you get to that column again
+		  */
+		typecommit(t);
+//print("tq0 %d\n", t->q0);
+		/* move back. At BOF or first nl, set col. 
+	           * at BOF or 2nd nl, break
+                    */
+		if (t->q0 >= t->file->b.nc) {
+			q0 = t->q0-1;
+			nlcount = 1;
+		} else {
+			q0 = t->q0;
+			nlcount = 0;
+		}
+		for(col = 0;  ;q0--) {
+/*print("start loop q0 %d col %d nlcount %d\n", q0, col, nlcount);*/
+/*print("t->q1 %d\n", t->q1);*/
+			if (q0 <= t->org) {
+				/* at start of file -- so no NL */
+				/* all these friggin' corner cases which I am too dumb to get */
+				if (col)
+					col--;
+				break;
+			}			
+			if (textreadc(t, q0) == '\n'){
+				if (nlcount == 1)
+					break;
+				nlcount++;
+				continue;
+			}
+
+			if (! nlcount) {
+				col++;
+			}
+		}
+/*print("q0 %d col %d\n", q0, col);*/
+		while(col > 0 && ++q0<t->file->b.nc && textreadc(t, q0)!= '\n') {
+			col--;
+		}
+/*print("q0 %d\n", q0);*/
+		textshow(t,q0, q0, TRUE);	
+		return;
+		break;
 	case Kcmd+'c':	/* %C: copy */
 		typecommit(t);
 		cut(t, t, nil, TRUE, FALSE, nil, 0);
@@ -757,7 +882,6 @@ texttype(Text *t, Rune r)
 	 	typecommit(t);
 		undo(t, nil, nil, TRUE, 0, nil, 0);
 		return;
-
 	Tagdown:
 		/* expand tag to show all text */
 		if(!t->w->tagexpand){
@@ -828,6 +952,43 @@ texttype(Text *t, Rune r)
 		if(t->ncache > 0)
 			typecommit(t);
 		t->iq1 = t->q0;
+		return;
+	case 0x0b:		/* ^K: kill to EOL */
+		if(t->q0 == 0)	/* nothing to erase */
+			return;
+//print("tq0 %d tq1 %d\n", t->q0, t->q1);
+		nnb = textfswidth(t);
+		q1 = t->q0 + nnb - 1;
+		q0 = t->q0 - 1;
+//print("q0 %d q1 %d\n", q0, q1);
+		if(nnb <= 0)
+			return;
+		for(i=0; i<t->file->ntext; i++){
+			u = t->file->text[i];
+			u->nofill = TRUE;
+			nb = nnb;
+			n = u->ncache;
+			if(n > 0){
+				if(q1 != u->cq0+n)
+					error("text.type backspace");
+				if(n > nb)
+					n = nb;
+				u->ncache -= n;
+				textdelete(u, q1-n, q1, FALSE);
+				nb -= n;
+			}
+			if(u->eq0==q1 || u->eq0==~0)
+				u->eq0 = q0;
+			if(nb && u==t)
+				textdelete(u, q0, q0+nb, TRUE);
+			if(u != t)
+				textsetselect(u, u->q0, u->q1);
+			else
+				textsetselect(t, q0, q0);
+			u->nofill = FALSE;
+		}
+		for(i=0; i<t->file->ntext; i++)
+			textfill(t->file->text[i]);
 		return;
 	case 0x08:	/* ^H: erase character */
 	case 0x15:	/* ^U: erase line */
