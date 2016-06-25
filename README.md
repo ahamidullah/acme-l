@@ -17,4 +17,17 @@ Added lisp style parenthesis highlighting:
 	Execute "Lisp OFF" to disable it.
 
 	Start acme with the "-p" arguement to use parenthesis highlighting for
-	all windows by default.</pre>
+	all windows by default.
+
+Better font rendering (based on https://gist.github.com/jlouis/8638404).
+
+GDB integration (slight):
+	All it does for now is highlight the appropriate line when GDB stops your program.
+	To use, put "adb" in your bin folder and add the following lines to the .gdbinit file in your home directory.
+
+>	define hook-post
+>	where
+>	shell adb
+>	end
+
+</pre>

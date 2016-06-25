@@ -11,15 +11,16 @@ _r()
 set_dot()
 {
 	echo -n "$2" | _w "$1" addr
-	echo -n addr=dot | _w "1" ctl
+	echo -n dot=addr | _w "$1" ctl
+	echo -n show | _w "$1" ctl
 }
 
 make_win()
 {
-	newwinid=$(_r new ctl | awk '{print $1}')
-	echo "name $1" | _w "$newwinid" ctl
-	echo -n get | _w "$newwinid" ctl
-	return "$newwinid"
+	newid=$(_r new ctl | awk '{print $1}')
+	echo "name $1" | _w "$newid" ctl
+	echo -n get | _w "$newid" ctl
+	echo "$newid"
 }
 
 get_path_from_tag()
@@ -29,29 +30,31 @@ get_path_from_tag()
 	return
 }
 
-find_win_and_set_dot()
+get_win_and_set_dot()
 {
+	read -r file line
 	dir=$(pwd)
-	goal_path="${dir}/$1"
+	goal_path="${dir}/$file"
 	winids=$(9p ls acme | awk '/^[0-9]+$/ {print $1}')
 	while IFS='\n' read -ra win_files; do
 		for i in "${win_files[@]}"; do
 			tag=$(_r "$i" tag)
 			win_path=$(get_path_from_tag "$tag")
 			if [ "$win_path" = "$goal_path" ]; then
-				set_dot "$i" "$2"
+				set_dot "$i" "$line"
 				return
 			fi
 		done
 	done <<< "$winids"
-	newwinid=$(make_win "full_path")
-	setdot "$newwinid" "$2"
+	echo "$goal_path"
+	newwinid=$(make_win "$goal_path")
+	echo "$newwinid"
+	set_dot "$newwinid" "$line"
 }
 
 update_dot()
 {
-	_r $winid body | awk '/^#0 / {for(i=1;i<=NF;i++){if($i~/[0-9a-zA-Z]+\.[0-9a-zA-Z]+:[0-9]+$/){split($i, a, ":")}}} END{print a[1]; print a[2]}' | find_win_and_set_dot
+	_r $winid body | awk '/^#0 / {for(i=1;i<=NF;i++){if($i~/[0-9a-zA-Z]+\.[0-9a-zA-Z]+:[0-9]+$/){split($i, a, ":")}}} END{printf("%s %s", a[1], a[2])}' | get_win_and_set_dot
 }
 
-
-
+update_dot
