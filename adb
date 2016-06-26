@@ -46,15 +46,13 @@ get_win_and_set_dot()
 			fi
 		done
 	done <<< "$winids"
-	echo "$goal_path"
 	newwinid=$(make_win "$goal_path")
-	echo "$newwinid"
 	set_dot "$newwinid" "$line"
 }
 
 update_dot()
 {
-	_r $winid body | awk '/^#0 / {for(i=1;i<=NF;i++){if($i~/[0-9a-zA-Z]+\.[0-9a-zA-Z]+:[0-9]+$/){split($i, a, ":")}}} END{printf("%s %s", a[1], a[2])}' | get_win_and_set_dot
+	_r $winid body | awk '/^#0 / {n=1} n{for(i=1;i<=NF;i++){if($i~/[0-9a-zA-Z]+\.[0-9a-zA-Z]+:[0-9]+$/){split($i, a, ":");n=0}}} END{printf("%s %s", a[1], a[2])}' | get_win_and_set_dot
 }
 
 update_dot

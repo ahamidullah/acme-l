@@ -1,0 +1,8 @@
+TODO_NEW
+	-update on frame
+	-send variable to plumber and print it in gdb if adb is open
+
+TODO_BUG
+	-doesn't update with long args
+
+DONE
