@@ -522,6 +522,36 @@ textreadc(Text *t, uint q)
 }
 
 int
+textforwardwordwidth(Text *t)
+{
+	uint q, eq;
+	Rune r;
+	int skipping;
+
+	q = t->q0;
+	skipping = TRUE;
+
+	if(t->q0 >=  t->file->b.nc-1)
+		return 0;
+
+	while(q < t->file->b.nc-1){
+		r = textreadc(t, q+1);
+		if(r == '\n'){		/* eat at most one more character */
+			if(q == t->q0)	/* eat the newline */
+				++q;
+			break;
+		}
+		eq = isalnum(r);
+		if(eq && skipping)	/* found one; stop skipping */
+			skipping = FALSE;
+		else if(!eq && !skipping)
+			break;
+		++q;
+	}
+	return q - t->q0;
+}
+
+int
 textbswidth(Text *t, Rune c)
 {
 	uint q, eq;
@@ -540,7 +570,7 @@ textbswidth(Text *t, Rune c)
 				--q;
 			break; 
 		}
-		if(c == 0x17){
+		if(c == 0x17 || c == 0x09){
 			eq = isalnum(r);
 			if(eq && skipping)	/* found one; stop skipping */
 				skipping = FALSE;
@@ -696,6 +726,9 @@ texttype(Text *t, Rune r)
 	nr = 1;
 	rp = &r;
 	switch(r){
+	case 0x1b62:
+		printf("alt works\n");
+		return;
 	case Kleft:
 	case 0x02:	/* ^B: left one */
 		typecommit(t);
@@ -874,13 +907,16 @@ texttype(Text *t, Rune r)
 		textshow(t,q0, q0, TRUE);	
 		return;
 		break;
-	case Kcmd+'c':	/* %C: copy */
+	case 0x03:	/* %C: copy */
 		typecommit(t);
 		cut(t, t, nil, TRUE, FALSE, nil, 0);
 		return;
-	case Kcmd+'z':	/* %Z: undo */
+	case 0x1a:	/* %Z: undo */
 	 	typecommit(t);
 		undo(t, nil, nil, TRUE, 0, nil, 0);
+		return;
+	case 0x13: /* ^S: save */
+		put(&t->w->body, nil, nil, XXX, XXX, nil, 0);
 		return;
 	Tagdown:
 		/* expand tag to show all text */
@@ -905,7 +941,7 @@ texttype(Text *t, Rune r)
 	}
 	/* cut/paste must be done after the seq++/filemark */
 	switch(r){
-	case Kcmd+'x':	/* %X: cut */
+	case 0x18:	/* %X: cut */
 		typecommit(t);
 		if(t->what == Body){
 			seq++;
@@ -915,7 +951,7 @@ texttype(Text *t, Rune r)
 		textshow(t, t->q0, t->q0, 1);
 		t->iq1 = t->q0;
 		return;
-	case Kcmd+'v':	/* %V: paste */
+	case 0x16:	/* %V: paste */
 		typecommit(t);
 		if(t->what == Body){
 			seq++;
@@ -1032,6 +1068,20 @@ texttype(Text *t, Rune r)
 		for(i=0; i<t->file->ntext; i++)
 			textfill(t->file->text[i]);
 		t->iq1 = t->q0;
+		return;
+	case 0x09: /* ^I: backward word */
+		if(t->q0 == 0)	/* nothing to erase */
+			return;
+		nnb = textbswidth(t, r);
+		if(nnb <= 0)
+			return;
+		textsetselect(t, t->q0-nnb, t->q0-nnb);
+		return;
+	case 0x0f: /* ^O: forward word */
+		nnb = textforwardwordwidth(t);
+		if(nnb <= 0)
+			return;
+		textsetselect(t, t->q0+nnb+1, t->q0+nnb+1);
 		return;
 	case '\n':
 		if(t->w->autoindent){
