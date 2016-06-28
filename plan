@@ -3,8 +3,11 @@ TODO_NEW
 	-send variable to plumber and print it in gdb if adb is open
 
 TODO_BUG
+	-save doesn't work until dot is changed right after text is typed
 
 DONE
 	Tue Jun 28 01:24:47 EDT 2016
 	+doesn't update with long args
 	+make ^Q and ^O smarter (always stop on whitespace)
+	+check if goal_path is a file and exists
+

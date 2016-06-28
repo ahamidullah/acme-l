@@ -35,6 +35,7 @@ get_win_and_set_dot()
 	read -r file line
 	dir=$(pwd)
 	goal_path="${dir}/$file"
+	if [ ! -r "$goal_path -o -d "$goal_path" ]; then return; fi
 	winids=$(9p ls acme | awk '/^[0-9]+$/ {print $1}')
 	while IFS='\n' read -ra win_files; do
 		for i in "${win_files[@]}"; do
