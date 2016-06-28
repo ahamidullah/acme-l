@@ -11,7 +11,7 @@ Added keyboard shortcuts (based on http://plan9.bell-labs.com/sources/contrib/rm
 	^l: redraw
 	^n: move cursor to next line
 	^p: move cursor to previous line
-	^i: word backward
+	^q: word backward
 	^o: word forward
 	^s: put
 	^x: cut

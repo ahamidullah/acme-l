@@ -541,7 +541,7 @@ textforwardwordwidth(Text *t)
 				++q;
 			break;
 		}
-		eq = isalnum(r);
+		eq = !isspace(r);
 		if(eq && skipping)	/* found one; stop skipping */
 			skipping = FALSE;
 		else if(!eq && !skipping)
@@ -570,8 +570,8 @@ textbswidth(Text *t, Rune c)
 				--q;
 			break; 
 		}
-		if(c == 0x17 || c == 0x09){
-			eq = isalnum(r);
+		if(c == 0x17 || c == 0x11){
+			eq = (c == 0x17) ? isalnum(r) : !isspace(r);
 			if(eq && skipping)	/* found one; stop skipping */
 				skipping = FALSE;
 			else if(!eq && !skipping)
@@ -1069,8 +1069,8 @@ texttype(Text *t, Rune r)
 			textfill(t->file->text[i]);
 		t->iq1 = t->q0;
 		return;
-	case 0x09: /* ^I: backward word */
-		if(t->q0 == 0)	/* nothing to erase */
+	case 0x11: /* ^Q: backward word */
+		if(t->q0 == 0)
 			return;
 		nnb = textbswidth(t, r);
 		if(nnb <= 0)
