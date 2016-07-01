@@ -916,6 +916,7 @@ texttype(Text *t, Rune r)
 		undo(t, nil, nil, TRUE, 0, nil, 0);
 		return;
 	case 0x13: /* ^S: save */
+		wincommit(t->w, &t->w->body);
 		put(&t->w->body, nil, nil, XXX, XXX, nil, 0);
 		return;
 	Tagdown:
@@ -1072,12 +1073,14 @@ texttype(Text *t, Rune r)
 	case 0x11: /* ^Q: backward word */
 		if(t->q0 == 0)
 			return;
+		typecommit(t);
 		nnb = textbswidth(t, r);
 		if(nnb <= 0)
 			return;
 		textsetselect(t, t->q0-nnb, t->q0-nnb);
 		return;
 	case 0x0f: /* ^O: forward word */
+		typecommit(t);
 		nnb = textforwardwordwidth(t);
 		if(nnb <= 0)
 			return;

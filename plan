@@ -1,13 +1,17 @@
 TODO_NEW
-	-update on frame
 	-send variable to plumber and print it in gdb if adb is open
+	-set break from source and run debugger
 
 TODO_BUG
-	-save doesn't work until dot is changed right after text is typed
 
 DONE
-	Tue Jun 28 01:24:47 EDT 2016
+	06/28/16 - Tue
 	+doesn't update with long args
 	+make ^Q and ^O smarter (always stop on whitespace)
 	+check if goal_path is a file and exists
+	+save doesn't work until dot is changed right after text is typed
+	
+	07/01/16 - Fri
+	+word move wrong after typing text (wincommit?)
+	+update on frame
 

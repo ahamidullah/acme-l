@@ -10,9 +10,10 @@ _r()
 
 set_dot()
 {
-	echo -n "$2" | _w "$1" addr
-	echo -n dot=addr | _w "$1" ctl
-	echo -n show | _w "$1" ctl
+	read -r winid line
+	echo -n "$line" | _w "$winid" addr
+	echo -n dot=addr | _w "$winid" ctl
+	echo -n show | _w "$winid" ctl
 }
 
 make_win()
@@ -30,30 +31,59 @@ get_path_from_tag()
 	return
 }
 
-get_win_and_set_dot()
+get_win()
 {
 	read -r file line
 	dir=$(pwd)
 	goal_path="${dir}/$file"
-	if [ ! -r "$goal_path -o -d "$goal_path" ]; then return; fi
+	
+	if [ ! -f "$goal_path" ]; then
+		return 1
+	fi
+
 	winids=$(9p ls acme | awk '/^[0-9]+$/ {print $1}')
 	while IFS='\n' read -ra win_files; do
 		for i in "${win_files[@]}"; do
 			tag=$(_r "$i" tag)
 			win_path=$(get_path_from_tag "$tag")
 			if [ "$win_path" = "$goal_path" ]; then
-				set_dot "$i" "$line"
-				return
+				echo "$i" "$line"
+				return 0
 			fi
 		done
 	done <<< "$winids"
+
+	#couldn't find a win with file name
 	newwinid=$(make_win "$goal_path")
-	set_dot "$newwinid" "$line"
+	echo "$newwinid" "$line"
+	return 0
+}
+
+#get the file and line number of the first stack trace frame from a file
+#in the current directory
+get_file_and_line()
+{
+	awk -v regexp="$1" '\
+		$0 ~ regexp { n=1 }\
+		n { for (i=1;i<=NF;i++)\
+			{ if ($i ~ /[0-9a-zA-Z]+\.[0-9a-zA-Z]+:[0-9]+$/)\
+				{ split($i, a, ":");\
+				if (system("[ -f " a[1] " ]") == 0)\
+					{ n=0 }}}}\
+		END { printf("%s %s", a[1], a[2]) }'
 }
 
 update_dot()
 {
-	_r $winid body | awk '/^#0 / {n=1} n{for(i=1;i<=NF;i++){if($i~/[0-9a-zA-Z]+\.[0-9a-zA-Z]+:[0-9]+$/){split($i, a, ":");n=0}}} END{printf("%s %s", a[1], a[2])}' | get_win_and_set_dot
+	winid_and_line=$(_r "$winid" body | get_file_and_line "$1" | get_win)
+	if [ $? -eq 0 ]; then
+		echo "$winid_and_line" | set_dot
+	fi
 }
 
-update_dot
+if [ "$1" = "backtrace" ]; then
+	update_dot "^#0 "
+fi
+if [ "$1" = "frame" ]; then
+	update_dot "^#[0-9]+ "
+fi
