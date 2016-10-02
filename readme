@@ -8,6 +8,7 @@ Added keyboard shortcuts (based on http://plan9.bell-labs.com/sources/contrib/rm
 	^f: right one char
 	^d: delete next char
 	^k: delete to end of line
+	^u: delete to first whitespace character on line
 	^l: redraw
 	^n: move cursor to next line
 	^p: move cursor to previous line
@@ -28,7 +29,7 @@ Added lisp style parenthesis highlighting:
 
 Better font rendering (based on https://gist.github.com/jlouis/8638404).
 
-GDB integration :
+GDB integration:
 	All it does for now is highlight the appropriate line when GDB stops your program. Works when you change frames too.
 	To use, put "adb" in your bin folder and add the following lines to the .gdbinit file in your home directory.
 

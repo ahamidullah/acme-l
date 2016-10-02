@@ -867,7 +867,6 @@ texttype(Text *t, Rune r)
 		  * left, until you get to that column again
 		  */
 		typecommit(t);
-//print("tq0 %d\n", t->q0);
 		/* move back. At BOF or first nl, set col. 
 	           * at BOF or 2nd nl, break
                     */
@@ -879,8 +878,6 @@ texttype(Text *t, Rune r)
 			nlcount = 0;
 		}
 		for(col = 0;  ;q0--) {
-/*print("start loop q0 %d col %d nlcount %d\n", q0, col, nlcount);*/
-/*print("t->q1 %d\n", t->q1);*/
 			if (q0 <= t->org) {
 				/* at start of file -- so no NL */
 				/* all these friggin' corner cases which I am too dumb to get */
@@ -899,11 +896,9 @@ texttype(Text *t, Rune r)
 				col++;
 			}
 		}
-/*print("q0 %d col %d\n", q0, col);*/
 		while(col > 0 && ++q0<t->file->b.nc && textreadc(t, q0)!= '\n') {
 			col--;
 		}
-/*print("q0 %d\n", q0);*/
 		textshow(t,q0, q0, TRUE);	
 		return;
 		break;
@@ -993,11 +988,9 @@ texttype(Text *t, Rune r)
 	case 0x0b:		/* ^K: kill to EOL */
 		if(t->q0 == 0)	/* nothing to erase */
 			return;
-//print("tq0 %d tq1 %d\n", t->q0, t->q1);
 		nnb = textfswidth(t);
 		q1 = t->q0 + nnb - 1;
 		q0 = t->q0 - 1;
-//print("q0 %d q1 %d\n", q0, q1);
 		if(nnb <= 0)
 			return;
 		for(i=0; i<t->file->ntext; i++){
@@ -1033,6 +1026,14 @@ texttype(Text *t, Rune r)
 		if(t->q0 == 0)	/* nothing to erase */
 			return;
 		nnb = textbswidth(t, r);
+		/* I want ^U to only delete to the first non-whitespace character on the line
+		 * but I can't change it in textbswidth because a lot of other stuff
+		 * depends on it... so I'll just change it here */
+		if (r == 0x15) {
+			while (isspace(textreadc(t, t->q0 - nnb)))
+				--nnb;
+		}
+
 		q1 = t->q0;
 		q0 = q1-nnb;
 		/* if selection is at beginning of window, avoid deleting invisible text */
