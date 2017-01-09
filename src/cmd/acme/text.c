@@ -709,6 +709,7 @@ textcomplete(Text *t)
 	return rp;
 }
 
+/* keyboard shortcuts */
 void
 texttype(Text *t, Rune r)
 {
@@ -803,7 +804,7 @@ texttype(Text *t, Rune r)
 			nnb = textbswidth(t, 0x15);
 		textshow(t, t->q0-nnb, t->q0-nnb, TRUE);
 		return;
-	case 0x04:	/* ^D: delete next char *
+	case 0x04:	/* ^D: delete next char */
 		/* only delete if there is something to delete */
 		if(t->q1 < t->file->b.nc){
 			/* I'm lazy. Move right, then backspace. */
