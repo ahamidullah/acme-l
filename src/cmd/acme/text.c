@@ -1027,14 +1027,6 @@ texttype(Text *t, Rune r)
 		if(t->q0 == 0)	/* nothing to erase */
 			return;
 		nnb = textbswidth(t, r);
-		/* I want ^U to only delete to the first non-whitespace character on the line
-		 * but I can't change it in textbswidth because a lot of other stuff
-		 * depends on it... so I'll just change it here */
-		if (r == 0x15) {
-			while (isspace(textreadc(t, t->q0 - nnb)))
-				--nnb;
-		}
-
 		q1 = t->q0;
 		q0 = q1-nnb;
 		/* if selection is at beginning of window, avoid deleting invisible text */
